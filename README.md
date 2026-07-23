@@ -1,93 +1,62 @@
-# token-counter
+# ChatGPT Token Counter
 
+A simple Firefox extension that works only on `chatgpt.com`. It detects completed prompt-response pairs in ChatGPT conversations, counts visible prompt and response text with a local `js-tiktoken` tokenizer bundle, stores the results locally, and shows them in a popup table.
 
+## Files
 
-## Getting started
+- `manifest.json` - Firefox extension manifest.
+- `tokenizer.js` - Bundled local tokenizer code generated from `js-tiktoken` with `o200k_base`.
+- `tokenizer-entry.js` - Source entry used to build `tokenizer.js`.
+- `content.js` - Watches ChatGPT conversation changes with `MutationObserver`, extracts prompt-response pairs, counts visible text tokens, and saves rows to `browser.storage.local`.
+- `popup.html` - Popup markup.
+- `popup.js` - Popup rendering and CSV export logic.
+- `popup.css` - Lightweight popup styling.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## How token counting works
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+The extension uses a local bundled `js-tiktoken` tokenizer with the `o200k_base` encoding. This is much closer to ChatGPT tokenization than word counting and works without external APIs.
 
-## Add your files
+It counts only the visible user prompt and visible assistant response text extracted from the ChatGPT page. ChatGPT's internal/system tokens, hidden tool messages, attachments, and any server-side accounting are not exposed to browser extensions, so the extension cannot report the exact private server-side total.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## Load in Firefox
 
-```
-cd existing_repo
-git remote add origin https://repo.we4shakthi.in/wingsai/token-counter.git
-git branch -M main
-git push -uf origin main
-```
+1. Open Firefox.
+2. Go to `about:debugging#/runtime/this-firefox`.
+3. Click `Load Temporary Add-on...`.
+4. Select `manifest.json` from this folder.
+5. Open `https://chatgpt.com/` and use ChatGPT normally.
+6. Click the extension icon to view stored rows.
 
-## Integrate with your tools
+## Using a prompt queue
 
-- [ ] [Set up project integrations](https://repo.we4shakthi.in/wingsai/token-counter/-/settings/integrations)
+To avoid pasting a large dataset prompt by prompt:
 
-## Collaborate with your team
+1. Open `https://chatgpt.com/` in the active Firefox tab.
+2. Open the extension popup.
+3. Import a `.txt` or `.csv` prompt file, or paste all prompts into the Prompt Queue box.
+4. For text input, use one prompt per line, or separate longer multi-line prompts with a line containing only `---`.
+5. Click `Save Queue`.
+6. Click `Insert Next Prompt`.
+7. Review the inserted prompt in ChatGPT, then press Enter or click Send.
+8. Repeat `Insert Next Prompt` for the next prompt.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+For automatic sending, click `Start Auto`. The extension sends one prompt, waits until ChatGPT appears idle, then sends the next prompt. Click `Stop` to pause automation.
 
-## Test and Deploy
+Auto-run depends on ChatGPT's page controls and can be interrupted by rate limits, captchas, network errors, model limit messages, or UI changes. Keep the ChatGPT tab visible and check progress periodically.
 
-Use the built-in continuous integration in GitLab.
+## Export CSV
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+Click `Export CSV` in the popup to download `chatgpt_tokens.csv`.
 
-***
+The CSV contains exactly these columns:
 
-# Editing this README
+- `S.No`
+- `Prompt`
+- `Input Tokens`
+- `Output Tokens`
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Notes
 
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- Data is stored locally in Firefox using `browser.storage.local`.
+- Duplicate prompt-response pairs are skipped using a local signature of the prompt and response text.
+- The extension is limited to `https://chatgpt.com/*` by the manifest.

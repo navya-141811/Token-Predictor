@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Token Counter</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>ChatGPT Token Counter</h1>
+        <button id="exportCsv" type="button">Export CSV</button>
+      </header>
+
+      <section class="queue">
+        <h2>Prompt Queue</h2>
+        <input id="promptFile" type="file" accept=".txt,.csv,text/plain,text/csv">
+        <textarea id="promptQueueInput" placeholder="Paste prompts here. Use one prompt per line, or separate longer prompts with a line containing only ---"></textarea>
+        <div class="queue-actions">
+          <button id="saveQueue" type="button">Save Queue</button>
+          <button id="insertNextPrompt" type="button">Insert Next Prompt</button>
+          <button id="startAutoQueue" type="button">Start Auto</button>
+          <button id="stopAutoQueue" type="button" class="danger">Stop</button>
+          <button id="resetQueue" type="button" class="secondary">Reset</button>
+        </div>
+        <p id="queueStatus" class="status">No prompt queue saved.</p>
+      </section>
+
+      <table>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Prompt</th>
+            <th>Input Tokens</th>
+            <th>Output Tokens</th>
+          </tr>
+        </thead>
+        <tbody id="tokenRows">
+          <tr>
+            <td colspan="4" class="empty">No completed prompt-response pairs found yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

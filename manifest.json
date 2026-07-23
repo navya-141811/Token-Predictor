@@ -1,0 +1,32 @@
+{
+  "manifest_version": 2,
+  "name": "ChatGPT Token Counter",
+  "version": "1.0.0",
+  "description": "Counts visible prompt and response tokens on ChatGPT conversations with a local tokenizer.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "tokenizer.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_action": {
+    "default_title": "ChatGPT Token Counter",
+    "default_popup": "popup.html"
+  },
+  "applications": {
+    "gecko": {
+      "id": "chatgpt-token-counter@example.local"
+    }
+  }
+}

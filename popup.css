@@ -1,0 +1,160 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  min-width: 560px;
+  max-width: 560px;
+  color: #1f2933;
+  background: #ffffff;
+}
+
+main {
+  padding: 14px;
+}
+
+header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+h1 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+button {
+  background: #166534;
+  border: 1px solid #14532d;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 7px 10px;
+}
+
+button:hover,
+button:focus {
+  background: #14532d;
+}
+
+button.secondary {
+  background: #ffffff;
+  border-color: #9ca3af;
+  color: #1f2933;
+}
+
+button.secondary:hover,
+button.secondary:focus {
+  background: #f3f4f6;
+}
+
+button.danger {
+  background: #b91c1c;
+  border-color: #991b1b;
+}
+
+button.danger:hover,
+button.danger:focus {
+  background: #991b1b;
+}
+
+.queue {
+  border-bottom: 1px solid #d8dee4;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+}
+
+h2 {
+  font-size: 13px;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
+input[type="file"] {
+  box-sizing: border-box;
+  display: block;
+  font: inherit;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font: inherit;
+  height: 92px;
+  line-height: 1.35;
+  padding: 8px;
+  resize: vertical;
+  width: 100%;
+}
+
+.queue-actions {
+  flex-wrap: wrap;
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.status {
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 8px 0 0;
+}
+
+table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+th,
+td {
+  border: 1px solid #d8dee4;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+th:nth-child(1),
+td:nth-child(1) {
+  width: 44px;
+}
+
+th:nth-child(3),
+td:nth-child(3),
+th:nth-child(4),
+td:nth-child(4) {
+  text-align: right;
+  width: 82px;
+}
+
+.prompt {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  color: #64748b;
+  padding: 18px;
+  text-align: center;
+}
