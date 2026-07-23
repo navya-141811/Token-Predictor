@@ -6,8 +6,8 @@
 
 body {
   margin: 0;
-  min-width: 560px;
-  max-width: 560px;
+  min-width: 720px;
+  max-width: 720px;
   color: #1f2933;
   background: #ffffff;
 }
@@ -22,6 +22,11 @@ header {
   gap: 12px;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
 }
 
 h1 {
@@ -140,17 +145,25 @@ td:nth-child(1) {
   width: 44px;
 }
 
-th:nth-child(3),
-td:nth-child(3),
 th:nth-child(4),
-td:nth-child(4) {
+td:nth-child(4),
+th:nth-child(5),
+td:nth-child(5) {
   text-align: right;
   width: 82px;
 }
 
-.prompt {
+.prompt,
+.response {
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+th:nth-child(2),
+td:nth-child(2),
+th:nth-child(3),
+td:nth-child(3) {
+  text-align: left;
 }
 
 .empty {

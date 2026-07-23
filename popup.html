@@ -10,7 +10,10 @@
     <main>
       <header>
         <h1>ChatGPT Token Counter</h1>
-        <button id="exportCsv" type="button">Export CSV</button>
+        <div class="header-actions">
+          <button id="backfillOutputs" type="button" class="secondary">Backfill Open Chats</button>
+          <button id="exportCsv" type="button">Export CSV</button>
+        </div>
       </header>
 
       <section class="queue">
@@ -32,13 +35,14 @@
           <tr>
             <th>S.No</th>
             <th>Prompt</th>
+            <th>ChatGPT Output</th>
             <th>Input Tokens</th>
             <th>Output Tokens</th>
           </tr>
         </thead>
         <tbody id="tokenRows">
           <tr>
-            <td colspan="4" class="empty">No completed prompt-response pairs found yet.</td>
+            <td colspan="5" class="empty">No completed prompt-response pairs found yet.</td>
           </tr>
         </tbody>
       </table>

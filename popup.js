@@ -10,13 +10,14 @@ function escapeCsvValue(value) {
 }
 
 function buildCsv(rows) {
-  const header = ["S.No", "Prompt", "Input Tokens", "Output Tokens"];
+  const header = ["S.No", "Prompt", "ChatGPT Output", "Input Tokens", "Output Tokens"];
   const lines = [header.map(escapeCsvValue).join(",")];
 
   rows.forEach((row, index) => {
     lines.push([
       index + 1,
       row.prompt || "",
+      row.response || "",
       row.inputTokens || 0,
       row.outputTokens || 0
     ].map(escapeCsvValue).join(","));
@@ -43,6 +44,11 @@ function truncatePrompt(prompt) {
   return text.length > 180 ? `${text.slice(0, 177)}...` : text;
 }
 
+function truncateOutput(output) {
+  const text = String(output || "");
+  return text.length > 220 ? `${text.slice(0, 217)}...` : text;
+}
+
 function renderRows(rows) {
   const tbody = document.getElementById("tokenRows");
   tbody.textContent = "";
@@ -50,7 +56,7 @@ function renderRows(rows) {
   if (!rows.length) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 4;
+    cell.colSpan = 5;
     cell.className = "empty";
     cell.textContent = "No completed prompt-response pairs found yet.";
     row.appendChild(cell);
@@ -63,6 +69,7 @@ function renderRows(rows) {
     const values = [
       index + 1,
       truncatePrompt(item.prompt),
+      truncateOutput(item.response),
       item.inputTokens || 0,
       item.outputTokens || 0
     ];
@@ -73,6 +80,10 @@ function renderRows(rows) {
       if (valueIndex === 1) {
         cell.title = item.prompt || "";
         cell.className = "prompt";
+      }
+      if (valueIndex === 2) {
+        cell.title = item.response || "";
+        cell.className = "response";
       }
       row.appendChild(cell);
     });
@@ -230,6 +241,11 @@ function isChatGptUrl(url) {
   }
 }
 
+async function getOpenChatGptTabs() {
+  const tabs = await browser.tabs.query({});
+  return tabs.filter((tab) => tab.id && isChatGptUrl(tab.url));
+}
+
 async function insertNextPrompt() {
   const { queue, index } = await getQueueState();
   if (!queue.length) {
@@ -344,18 +360,65 @@ async function stopAutoQueue() {
   renderQueueStatus(queue, index, "Auto-run stopped.");
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+async function backfillOutputs() {
+  const { queue, index } = await getQueueState();
+  const tabs = await getOpenChatGptTabs();
+  if (!tabs.length) {
+    renderQueueStatus(queue, index, "Open the ChatGPT conversations with the missing outputs first.");
+    return;
+  }
+
+  const results = [];
+  for (const tab of tabs) {
+    try {
+      const result = await browser.tabs.sendMessage(tab.id, { type: "BACKFILL_OUTPUTS" });
+      results.push(result && result.ok
+        ? result
+        : { ok: false, error: result && result.error ? result.error : "Could not scan this tab." });
+    } catch (error) {
+      results.push({ ok: false, error: "Refresh this ChatGPT tab and try again." });
+    }
+  }
+
   const rows = await getRows();
+  renderRows(rows);
+
+  const scannedTabs = results.filter((result) => result.ok).length;
+  const scannedPairs = results.reduce((total, result) => total + (result.pairs || 0), 0);
+  const changedRows = results.reduce((total, result) => total + (result.changed || 0), 0);
+  const failedTabs = results.length - scannedTabs;
+
+  if (!scannedPairs) {
+    renderQueueStatus(queue, index, failedTabs
+      ? `Could not scan ${failedTabs} ChatGPT tabs. Refresh them and try again.`
+      : `Checked ${scannedTabs} open ChatGPT tabs, but no visible prompt-response pairs were found.`);
+    return;
+  }
+
+  const tabLabel = scannedTabs === 1 ? "tab" : "tabs";
+  const rowLabel = changedRows === 1 ? "row" : "rows";
+  const failureText = failedTabs ? ` ${failedTabs} tabs need refresh.` : "";
+  renderQueueStatus(
+    queue,
+    index,
+    `Checked ${scannedPairs} pairs in ${scannedTabs} open ChatGPT ${tabLabel} and updated ${changedRows} ${rowLabel}.${failureText}`
+  );
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  let rows = await getRows();
   const { queue, index, autoStatus } = await getQueueState();
 
   renderRows(rows);
   document.getElementById("promptQueueInput").value = queueToText(queue);
   renderQueueStatus(queue, index, autoStatus);
 
-  document.getElementById("exportCsv").addEventListener("click", () => {
+  document.getElementById("exportCsv").addEventListener("click", async () => {
+    rows = await getRows();
     downloadCsv(rows);
   });
 
+  document.getElementById("backfillOutputs").addEventListener("click", backfillOutputs);
   document.getElementById("promptFile").addEventListener("change", importPromptFile);
   document.getElementById("saveQueue").addEventListener("click", saveQueueFromInput);
   document.getElementById("insertNextPrompt").addEventListener("click", insertNextPrompt);
@@ -366,6 +429,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   browser.storage.onChanged.addListener(async (changes, areaName) => {
     if (areaName !== "local") {
       return;
+    }
+
+    if (changes[STORAGE_KEY]) {
+      rows = await getRows();
+      renderRows(rows);
     }
 
     if (changes[QUEUE_INDEX_KEY] || changes[AUTO_STATUS_KEY] || changes[AUTO_RUNNING_KEY]) {

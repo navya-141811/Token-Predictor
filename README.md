@@ -48,10 +48,15 @@ Auto-run depends on ChatGPT's page controls and can be interrupted by rate limit
 
 Click `Export CSV` in the popup to download `chatgpt_tokens.csv`.
 
+If older rows have blank outputs, open the matching ChatGPT conversations in browser tabs and click `Backfill Open Chats`.
+The extension will rescan visible prompt-response pairs in every open `chatgpt.com` tab and fill matching blank output rows.
+Rows can only be recovered this way when the matching ChatGPT response is still available in a loaded conversation page.
+
 The CSV contains exactly these columns:
 
 - `S.No`
 - `Prompt`
+- `ChatGPT Output`
 - `Input Tokens`
 - `Output Tokens`
 

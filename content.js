@@ -86,6 +86,35 @@
     return hashString(`prompt-only\n---\n${prompt}`);
   }
 
+  function responseCanBeReplaced(currentResponse, nextResponse) {
+    if (!currentResponse) {
+      return true;
+    }
+
+    return nextResponse.length >= currentResponse.length
+      && nextResponse.startsWith(currentResponse);
+  }
+
+  function findRowForPair(rows, pair, signature) {
+    const pendingSignature = promptSignature(pair.prompt);
+    return rows.find((row) => row.signature === signature)
+      || rows.find((row) => row.signature === pendingSignature)
+      || rows.find((row) => row.prompt === pair.prompt && (row.pending || !row.response))
+      || rows.find((row) => {
+        return row.prompt === pair.prompt
+          && responseCanBeReplaced(normalizeText(row.response), pair.response);
+      });
+  }
+
+  function applyPairToRow(row, pair, signature) {
+    row.inputTokens = pair.inputTokens;
+    row.response = pair.response;
+    row.outputTokens = pair.outputTokens;
+    row.tokenizerEncoding = window.ChatGPTTokenCounterTokenizer.encoding;
+    row.signature = signature;
+    row.pending = false;
+  }
+
   async function upsertPromptOnly(prompt) {
     const normalizedPrompt = normalizeText(prompt);
     if (!normalizedPrompt) {
@@ -136,20 +165,20 @@
 
     const rows = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
     const signatures = new Set(Array.isArray(stored[SIGNATURE_KEY]) ? stored[SIGNATURE_KEY] : []);
-    const oldSignature = promptSignature(prompt);
-    const newSignature = pairSignature({ prompt, response: normalizedResponse });
-    const row = rows.find((item) => item.signature === oldSignature)
-      || rows.find((item) => item.prompt === prompt && item.pending);
+    const pair = {
+      prompt,
+      response: normalizedResponse,
+      inputTokens: countTokens(prompt),
+      outputTokens: countTokens(normalizedResponse)
+    };
+    const newSignature = pairSignature(pair);
+    const row = findRowForPair(rows, pair, newSignature);
 
     if (!row) {
       return false;
     }
 
-    row.inputTokens = countTokens(prompt);
-    row.outputTokens = countTokens(normalizedResponse);
-    row.tokenizerEncoding = window.ChatGPTTokenCounterTokenizer.encoding;
-    row.signature = newSignature;
-    row.pending = false;
+    applyPairToRow(row, pair, newSignature);
     signatures.add(newSignature);
 
     await browser.storage.local.set({
@@ -169,14 +198,14 @@
   async function storePairs() {
     if (isSaving) {
       pendingSave = true;
-      return;
+      return { ok: true, pairs: 0, changed: 0, busy: true };
     }
 
     isSaving = true;
     try {
       const pairs = buildPairs(getMessages());
       if (!pairs.length) {
-        return;
+        return { ok: true, pairs: 0, changed: 0 };
       }
 
       const stored = await browser.storage.local.get({
@@ -186,20 +215,26 @@
 
       const rows = Array.isArray(stored[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
       const signatures = new Set(Array.isArray(stored[SIGNATURE_KEY]) ? stored[SIGNATURE_KEY] : []);
-      const rowsBySignature = new Map(rows.map((row) => [row.signature, row]));
       let changed = false;
+      let changedCount = 0;
 
       for (const pair of pairs) {
         const signature = pairSignature(pair);
-        const existingRow = rowsBySignature.get(signature);
-        const pendingSignature = promptSignature(pair.prompt);
-        const pendingRow = rows.find((row) => row.signature === pendingSignature || (row.prompt === pair.prompt && row.pending));
+        const row = findRowForPair(rows, pair, signature);
 
-        if (existingRow && existingRow.tokenizerEncoding !== window.ChatGPTTokenCounterTokenizer.encoding) {
-          existingRow.inputTokens = pair.inputTokens;
-          existingRow.outputTokens = pair.outputTokens;
-          existingRow.tokenizerEncoding = window.ChatGPTTokenCounterTokenizer.encoding;
-          changed = true;
+        if (row) {
+          const shouldUpdate = row.signature !== signature
+            || row.response !== pair.response
+            || row.tokenizerEncoding !== window.ChatGPTTokenCounterTokenizer.encoding;
+
+          if (shouldUpdate) {
+            applyPairToRow(row, pair, signature);
+            signatures.add(signature);
+            changed = true;
+            changedCount += 1;
+          }
+
+          continue;
         }
 
         if (signatures.has(signature)) {
@@ -207,18 +242,9 @@
         }
 
         signatures.add(signature);
-        if (pendingRow) {
-          pendingRow.inputTokens = pair.inputTokens;
-          pendingRow.outputTokens = pair.outputTokens;
-          pendingRow.tokenizerEncoding = window.ChatGPTTokenCounterTokenizer.encoding;
-          pendingRow.signature = signature;
-          pendingRow.pending = false;
-          changed = true;
-          continue;
-        }
-
         rows.push({
           prompt: pair.prompt,
+          response: pair.response,
           inputTokens: pair.inputTokens,
           outputTokens: pair.outputTokens,
           createdAt: new Date().toISOString(),
@@ -226,6 +252,7 @@
           signature
         });
         changed = true;
+        changedCount += 1;
       }
 
       if (changed) {
@@ -234,8 +261,14 @@
           [SIGNATURE_KEY]: Array.from(signatures)
         });
       }
+
+      return { ok: true, pairs: pairs.length, changed: changedCount };
     } catch (error) {
       console.error("ChatGPT Token Counter failed to store conversation data:", error);
+      return {
+        ok: false,
+        error: error && error.message ? error.message : "Could not scan ChatGPT messages."
+      };
     } finally {
       isSaving = false;
       if (pendingSave) {
@@ -430,6 +463,15 @@
       autoRunning = false;
       window.clearTimeout(autoTimer);
       return Promise.resolve({ ok: true });
+    }
+
+    if (message.type === "BACKFILL_OUTPUTS") {
+      return storePairs().then(async (result) => {
+        if (!isGenerating()) {
+          await completePendingPrompt(getLastAssistantMessageText());
+        }
+        return result;
+      });
     }
 
     return undefined;
