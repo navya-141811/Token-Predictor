@@ -52,6 +52,8 @@ If older rows have blank outputs, open the matching ChatGPT conversations in bro
 The extension will rescan visible prompt-response pairs in every open `chatgpt.com` tab and fill matching blank output rows.
 Rows can only be recovered this way when the matching ChatGPT response is still available in a loaded conversation page.
 
+Click `Clear Table` to delete saved table rows from local browser storage. This keeps the prompt queue intact.
+
 The CSV contains exactly these columns:
 
 - `S.No`

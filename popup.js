@@ -1,4 +1,6 @@
 const STORAGE_KEY = "chatgptTokenRows";
+const SIGNATURE_KEY = "chatgptTokenSignatures";
+const PENDING_PROMPT_KEY = "chatgptPendingPrompt";
 const QUEUE_KEY = "chatgptPromptQueue";
 const QUEUE_INDEX_KEY = "chatgptPromptQueueIndex";
 const AUTO_RUNNING_KEY = "chatgptPromptQueueAutoRunning";
@@ -405,6 +407,22 @@ async function backfillOutputs() {
   );
 }
 
+async function clearTableData() {
+  const shouldClear = window.confirm("Delete all saved table rows? This will not delete your prompt queue.");
+  if (!shouldClear) {
+    return;
+  }
+
+  const { queue, index } = await getQueueState();
+  await browser.storage.local.remove([
+    STORAGE_KEY,
+    SIGNATURE_KEY,
+    PENDING_PROMPT_KEY
+  ]);
+  renderRows([]);
+  renderQueueStatus(queue, index, "Saved table data deleted.");
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   let rows = await getRows();
   const { queue, index, autoStatus } = await getQueueState();
@@ -419,6 +437,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.getElementById("backfillOutputs").addEventListener("click", backfillOutputs);
+  document.getElementById("clearTableData").addEventListener("click", clearTableData);
   document.getElementById("promptFile").addEventListener("change", importPromptFile);
   document.getElementById("saveQueue").addEventListener("click", saveQueueFromInput);
   document.getElementById("insertNextPrompt").addEventListener("click", insertNextPrompt);
