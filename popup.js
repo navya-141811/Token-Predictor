@@ -227,7 +227,7 @@ async function resetQueue() {
 }
 
 async function getActiveChatGptTab() {
-  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+  const tabs = await browser.tabs.query({ active: true, lastFocusedWindow: true });
   const tab = tabs[0];
   if (!tab || !tab.id || !isChatGptUrl(tab.url)) {
     return null;
@@ -408,11 +408,6 @@ async function backfillOutputs() {
 }
 
 async function clearTableData() {
-  const shouldClear = window.confirm("Delete all saved table rows? This will not delete your prompt queue.");
-  if (!shouldClear) {
-    return;
-  }
-
   const { queue, index } = await getQueueState();
   await browser.storage.local.remove([
     STORAGE_KEY,

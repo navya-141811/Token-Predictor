@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "tabs",
-    "storage"
+    "storage",
+    "https://chatgpt.com/*"
   ],
   "content_scripts": [
     {

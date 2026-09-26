@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Token Predictor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 60px 16px; }
+    .card { background: #fff; border-radius: 12px; padding: 36px; width: 100%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    h1 { font-size: 1.4rem; margin-bottom: 24px; color: #222; }
+    textarea { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; resize: vertical; min-height: 100px; outline: none; }
+    textarea:focus { border-color: #4f46e5; }
+    .hint { font-size: 0.8rem; color: #888; margin-top: 6px; }
+    .results { margin-top: 28px; display: none; gap: 16px; justify-content: space-between; }
+    .results.show { display: flex; }
+    .stat { flex: 1; background: #f0f0ff; border-radius: 10px; padding: 20px; text-align: center; }
+    .stat .label { font-size: 0.8rem; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat .value { font-size: 2rem; font-weight: 700; color: #4f46e5; }
+    .stat .sub { font-size: 0.75rem; color: #999; margin-top: 4px; }
+    .quality-stars { font-size: 1.4rem; }
+    #error { color: #e53e3e; margin-top: 12px; font-size: 0.9rem; display: none; }
+    #loading { margin-top: 16px; color: #888; font-size: 0.9rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔢 Token Predictor</h1>
+    <textarea id="prompt" placeholder="Type your prompt and press Ctrl+Enter..."></textarea>
+    <div class="hint">Press <strong>Ctrl + Enter</strong> to predict</div>
+    <div id="error"></div>
+    <div id="loading">Predicting...</div>
+    <div class="results" id="results">
+      <div class="stat">
+        <div class="label">Input Tokens</div>
+        <div class="value" id="input-tokens">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">Predicted Output Tokens</div>
+        <div class="value" id="output-tokens">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">Prompt Quality</div>
+        <div class="value quality-stars" id="quality-stars">—</div>
+        <div class="sub" id="quality-num"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const textarea = document.getElementById("prompt");
+    textarea.addEventListener("keydown", e => {
+      if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); runPredict(); }
+    });
+
+    async function runPredict() {
+      const prompt = textarea.value.trim();
+      const err = document.getElementById("error");
+      const loading = document.getElementById("loading");
+      const results = document.getElementById("results");
+      err.style.display = "none";
+      if (!prompt) { err.textContent = "Please enter a prompt."; err.style.display = "block"; return; }
+      loading.style.display = "block";
+      results.classList.remove("show");
+      const res = await fetch("/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
+      loading.style.display = "none";
+      if (!res.ok) { err.textContent = "Prediction failed."; err.style.display = "block"; return; }
+      const data = await res.json();
+      document.getElementById("input-tokens").textContent = data.input_tokens;
+      document.getElementById("output-tokens").textContent = data.output_tokens;
+      document.getElementById("quality-stars").textContent = "★".repeat(data.quality) + "☆".repeat(5 - data.quality);
+      document.getElementById("quality-num").textContent = `${data.quality} / 5`;
+      results.classList.add("show");
+    }
+  </script>
+</body>
+</html>
