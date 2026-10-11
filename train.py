@@ -15,15 +15,27 @@ df2 = pd.read_csv("combined_chatgpt_tokens_with_quality.csv")
 df2.columns = df2.columns.str.strip().str.lower()
 df2 = df2.rename(columns={"chatgpt output": "response", "input tokens": "input_tokens", "output tokens": "output_tokens"})
 
+df3 = pd.read_csv("chatgpt_tokens_11_with_quality.csv")
+df3.columns = df3.columns.str.strip().str.lower()
+df3 = df3.rename(columns={"chatgpt output": "response", "input tokens": "input_tokens", "output tokens": "output_tokens"})
+
+df4 = pd.read_csv("chatgpt_tokens_11_with_quality.csv")
+df4.columns = df4.columns.str.strip().str.lower()
+df4 = df4.rename(columns={"chatgpt output": "response", "input tokens": "input_tokens", "output tokens": "output_tokens"})
+
 df = pd.concat([
-    df1[["prompt", "input_tokens", "output_tokens", "quality_of_prompt"]],
-    df2[["prompt", "input_tokens", "output_tokens", "quality_of_prompt"]]
+    df1[["prompt", "response", "input_tokens", "output_tokens", "quality_of_prompt"]],
+    df2[["prompt", "response", "input_tokens", "output_tokens", "quality_of_prompt"]],
+    df3[["prompt", "response", "input_tokens", "output_tokens", "quality_of_prompt"]],
+    df4[["prompt", "response", "input_tokens", "output_tokens", "quality_of_prompt"]],
 ], ignore_index=True)
 df = df.dropna(subset=["prompt", "output_tokens", "input_tokens", "quality_of_prompt"])
 df = df[df["output_tokens"] > 0]
 df = df.drop_duplicates(subset=["prompt"])
 print(f"Total rows after dedup: {len(df)}")
 
+# Save prompt+response lookup for nearest-neighbor output prediction
+df[["prompt", "response"]].dropna().to_csv("prompt_response_lookup.csv", index=False)
 # --- Features ---
 p = df["prompt"].str.lower()
 df["word_count"]   = df["prompt"].str.split().str.len()
@@ -79,4 +91,8 @@ print(f"R²:   {r2_score(actual, preds):.3f}")
 # --- Save ---
 joblib.dump(model, "token_predictor.pkl")
 joblib.dump(embedder, "embedder.pkl")
-print("Saved token_predictor.pkl and embedder.pkl")
+# Save all prompt embeddings for nearest-neighbor output lookup
+lookup_df = pd.read_csv("prompt_response_lookup.csv")
+lookup_embeddings = embedder.encode(lookup_df["prompt"].tolist(), show_progress_bar=True, batch_size=32)
+joblib.dump(lookup_embeddings, "lookup_embeddings.pkl")
+print("Saved token_predictor.pkl, embedder.pkl, lookup_embeddings.pkl")

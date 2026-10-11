@@ -12,12 +12,16 @@
     textarea:focus { border-color: #4f46e5; }
     .hint { font-size: 0.8rem; color: #888; margin-top: 6px; }
     .results { margin-top: 28px; display: none; gap: 16px; justify-content: space-between; }
-    .results.show { display: flex; }
+    .results.show { display: flex; flex-direction: column; }
+    .stats-row { display: flex; gap: 16px; }
     .stat { flex: 1; background: #f0f0ff; border-radius: 10px; padding: 20px; text-align: center; }
     .stat .label { font-size: 0.8rem; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
     .stat .value { font-size: 2rem; font-weight: 700; color: #4f46e5; }
     .stat .sub { font-size: 0.75rem; color: #999; margin-top: 4px; }
     .quality-stars { font-size: 1.4rem; }
+    .output-box { background: #f9f9ff; border: 1px solid #ddd; border-radius: 10px; padding: 16px; }
+    .output-box .label { font-size: 0.8rem; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .output-box .text { font-size: 0.9rem; color: #333; white-space: pre-wrap; max-height: 300px; overflow-y: auto; line-height: 1.6; }
     #error { color: #e53e3e; margin-top: 12px; font-size: 0.9rem; display: none; }
     #loading { margin-top: 16px; color: #888; font-size: 0.9rem; display: none; }
   </style>
@@ -30,18 +34,24 @@
     <div id="error"></div>
     <div id="loading">Predicting...</div>
     <div class="results" id="results">
-      <div class="stat">
-        <div class="label">Input Tokens</div>
-        <div class="value" id="input-tokens">—</div>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="label">Input Tokens</div>
+          <div class="value" id="input-tokens">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Predicted Output Tokens</div>
+          <div class="value" id="output-tokens">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Prompt Quality</div>
+          <div class="value quality-stars" id="quality-stars">—</div>
+          <div class="sub" id="quality-num"></div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="label">Predicted Output Tokens</div>
-        <div class="value" id="output-tokens">—</div>
-      </div>
-      <div class="stat">
-        <div class="label">Prompt Quality</div>
-        <div class="value quality-stars" id="quality-stars">—</div>
-        <div class="sub" id="quality-num"></div>
+      <div class="output-box">
+        <div class="label">Most Similar Example Output <span style="font-size:0.7rem;color:#aaa;text-transform:none;letter-spacing:0">(nearest match from training data)</span></div>
+        <div class="text" id="sample-output"></div>
       </div>
     </div>
   </div>
@@ -68,6 +78,7 @@
       document.getElementById("output-tokens").textContent = data.output_tokens;
       document.getElementById("quality-stars").textContent = "★".repeat(data.quality) + "☆".repeat(5 - data.quality);
       document.getElementById("quality-num").textContent = `${data.quality} / 5`;
+      document.getElementById("sample-output").textContent = data.sample_output;
       results.classList.add("show");
     }
   </script>
