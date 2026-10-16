@@ -13,6 +13,7 @@ df1 = df1.rename(columns={"chatgpt_response": "response"})
 
 df2 = pd.read_csv("combined_chatgpt_tokens_with_quality.csv")
 df2.columns = df2.columns.str.strip().str.lower()
+
 df2 = df2.rename(columns={"chatgpt output": "response", "input tokens": "input_tokens", "output tokens": "output_tokens"})
 
 df3 = pd.read_csv("chatgpt_tokens_11_with_quality.csv")
